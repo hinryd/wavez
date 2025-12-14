@@ -1,12 +1,10 @@
-// server.ts
-const server = Bun.serve({
-  port: 3000,
-  fetch() {
-    return new Response(Bun.file("build/index.html"));
-  },
-  error() {
-    return new Response("404 Not Found", { status: 404 });
-  },
-});
+import { Hono } from 'hono'
+import { serveStatic } from 'hono/bun'
 
-console.log(`Listening on http://localhost:${server.port} at ${new Date().toISOString()}`);
+const app = new Hono()
+
+app.use('/*', serveStatic({ root: './build' }));
+app.get('/', serveStatic({ path: './build/index.html' }));
+
+
+export default app
