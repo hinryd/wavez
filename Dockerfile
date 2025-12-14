@@ -14,7 +14,8 @@ WORKDIR /app
 
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/package.json ./
+COPY --from=builder /app/server.ts ./
 
 EXPOSE 3000
 
-CMD ["bun", "./build/index.html"]
+CMD ["bun", "server.ts"]
