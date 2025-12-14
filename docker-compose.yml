@@ -1,4 +1,6 @@
 services:
   wavez:
     build: .
+    ports:
+      - "9981:3000"
     restart: unless-stopped
