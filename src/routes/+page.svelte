@@ -268,8 +268,8 @@
 	<div class="relative mx-auto flex w-full max-w-6xl flex-col gap-10 px-5 py-7 sm:px-8 sm:py-10">
 		<header class="flex flex-col gap-2">
 			<div class="flex items-center justify-center gap-3">
-				<div class="flex flex-col items-center">
-					<h1 class="font-serif text-3xl font-semibold tracking-tight sm:text-4xl">Wavez</h1>
+				<div class="flex flex-col items-center gap-2">
+					<h1 class="font-serif text-6xl font-semibold tracking-tight">Wavez</h1>
 					<p class="px-3 text-sm text-slate-300">
 						Colored noise generator for focus, masking, and sound design
 					</p>
