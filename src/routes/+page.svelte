@@ -191,6 +191,25 @@
 		return Math.max(-24, Math.min(24, value));
 	}
 
+	function clamp01(value: number) {
+		return Math.max(0, Math.min(1, value));
+	}
+
+	function isInteractiveElement(element: Element | null) {
+		if (!(element instanceof HTMLElement)) return false;
+		if (element.isContentEditable) return true;
+		const tag = element.tagName;
+		if (
+			tag === 'INPUT' ||
+			tag === 'TEXTAREA' ||
+			tag === 'SELECT' ||
+			tag === 'BUTTON' ||
+			tag === 'A'
+		)
+			return true;
+		return element.getAttribute('role') === 'slider';
+	}
+
 	function applyPreset(next: Exclude<PresetId, 'custom'>) {
 		preset = next;
 		const found = presets.find((p) => p.id === next);
@@ -240,7 +259,30 @@
 		engine.setBandsDb(bandsDb);
 		updateAnalyser();
 
+		function onKeyDown(e: KeyboardEvent) {
+			if (e.altKey || e.ctrlKey || e.metaKey) return;
+			if (isInteractiveElement(document.activeElement)) return;
+			if (e.code === 'Space') {
+				if (e.repeat) return;
+				e.preventDefault();
+				void setPlaying(!isPlaying);
+				return;
+			}
+			if (e.key === 'ArrowLeft') {
+				e.preventDefault();
+				volume = clamp01(volume - 0.02);
+				return;
+			}
+			if (e.key === 'ArrowRight') {
+				e.preventDefault();
+				volume = clamp01(volume + 0.02);
+			}
+		}
+
+		window.addEventListener('keydown', onKeyDown);
+
 		return () => {
+			window.removeEventListener('keydown', onKeyDown);
 			engine?.destroy();
 		};
 	});
@@ -337,16 +379,23 @@
 						</div>
 						<div class="mt-4 flex flex-wrap items-center gap-2">
 							{#each presets as p (p.id)}
-								<button
-									type="button"
-									onclick={() => applyPreset(p.id)}
-									class={`inline-flex items-center gap-1.5 rounded-2xl px-3 py-2 text-sm font-medium shadow-[0_0_0_1px_rgba(255,255,255,0.12)] transition focus:ring-2 focus:ring-sky-400/35 focus:outline-none ${
-										preset === p.id ? 'bg-white/15' : 'bg-white/5 hover:bg-white/10'
-									}`}
-								>
-									{#if p.color}<span class={`size-2.5 rounded-full ${p.color}`}></span>{/if}
-									{p.label}
-								</button>
+								<div class="relative">
+									<button
+										type="button"
+										onclick={() => applyPreset(p.id)}
+										class={`inline-flex items-center gap-1.5 rounded-2xl px-3 py-2 text-sm font-medium shadow-[0_0_0_1px_rgba(255,255,255,0.12)] transition focus:ring-2 focus:ring-sky-400/35 focus:outline-none ${
+											preset === p.id ? 'bg-white/15' : 'bg-white/5 hover:bg-white/10'
+										}`}
+									>
+										{#if p.color}<span class={`size-2.5 rounded-full ${p.color}`}></span>{/if}
+										{p.label}
+									</button>
+									{#if preset === p.id && isPlaying}
+										<span
+											class="absolute top-1/2 left-1/2 inline-flex h-full w-full -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-slate-500/50"
+										></span>
+									{/if}
+								</div>
 							{/each}
 							<div
 								class={`rounded-2xl px-3 py-2 text-sm font-medium shadow-[0_0_0_1px_rgba(255,255,255,0.12)] ${
@@ -454,6 +503,10 @@
 							<div class="rounded-2xl bg-white/5 p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
 								<span class="text-sm font-medium">Quick tips</span>
 								<div class="mt-3 flex flex-col gap-2 text-sm text-slate-300">
+									<div class="flex items-start gap-2">
+										<span class="mt-1 h-1.5 w-1.5 flex-none rounded-full bg-slate-300"></span>
+										<span>Shortcuts: Space play/pause, Left/Right adjust volume.</span>
+									</div>
 									<div class="flex items-start gap-2">
 										<span class="mt-1 h-1.5 w-1.5 flex-none rounded-full bg-sky-300"></span>
 										<span>Pink for focus, brown for masking low rumbles.</span>
