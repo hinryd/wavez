@@ -144,6 +144,64 @@ function createPeakingCoefficients(args: {
 	};
 }
 
+function createLowshelfCoefficients(args: {
+	sampleRate: number;
+	frequencyHz: number;
+	gainDb: number;
+}): BiquadCoefficients {
+	const { sampleRate, frequencyHz, gainDb } = args;
+	const a = Math.pow(10, gainDb / 40);
+	const w0 = (2 * Math.PI * frequencyHz) / sampleRate;
+	const cosW0 = Math.cos(w0);
+	const sinW0 = Math.sin(w0);
+	const q = Math.SQRT1_2; // Butterworth
+	const alpha = sinW0 / (2 * q);
+
+	const b0 = a * (a + 1 - (a - 1) * cosW0 + 2 * Math.sqrt(a) * alpha);
+	const b1 = 2 * a * (a - 1 - (a + 1) * cosW0);
+	const b2 = a * (a + 1 - (a - 1) * cosW0 - 2 * Math.sqrt(a) * alpha);
+	const a0 = a + 1 + (a - 1) * cosW0 + 2 * Math.sqrt(a) * alpha;
+	const a1 = -2 * (a - 1 + (a + 1) * cosW0);
+	const a2 = a + 1 + (a - 1) * cosW0 - 2 * Math.sqrt(a) * alpha;
+
+	return {
+		b0: b0 / a0,
+		b1: b1 / a0,
+		b2: b2 / a0,
+		a1: a1 / a0,
+		a2: a2 / a0
+	};
+}
+
+function createHighshelfCoefficients(args: {
+	sampleRate: number;
+	frequencyHz: number;
+	gainDb: number;
+}): BiquadCoefficients {
+	const { sampleRate, frequencyHz, gainDb } = args;
+	const a = Math.pow(10, gainDb / 40);
+	const w0 = (2 * Math.PI * frequencyHz) / sampleRate;
+	const cosW0 = Math.cos(w0);
+	const sinW0 = Math.sin(w0);
+	const q = Math.SQRT1_2; // Butterworth
+	const alpha = sinW0 / (2 * q);
+
+	const b0 = a * (a + 1 + (a - 1) * cosW0 + 2 * Math.sqrt(a) * alpha);
+	const b1 = -2 * a * (a - 1 + (a + 1) * cosW0);
+	const b2 = a * (a + 1 + (a - 1) * cosW0 - 2 * Math.sqrt(a) * alpha);
+	const a0 = a + 1 - (a - 1) * cosW0 + 2 * Math.sqrt(a) * alpha;
+	const a1 = 2 * (a - 1 - (a + 1) * cosW0);
+	const a2 = a + 1 - (a - 1) * cosW0 - 2 * Math.sqrt(a) * alpha;
+
+	return {
+		b0: b0 / a0,
+		b1: b1 / a0,
+		b2: b2 / a0,
+		a1: a1 / a0,
+		a2: a2 / a0
+	};
+}
+
 function processBiquadInPlace(samples: Float32Array, coefficients: BiquadCoefficients, state: BiquadState) {
 	const { b0, b1, b2, a1, a2 } = coefficients;
 	let { x1, x2, y1, y2 } = state;
@@ -245,9 +303,15 @@ export function createNoiseEngine(): NoiseEngine {
 
 		eqFilters = octaveBandCentersHz.map((frequencyHz, bandIndex) => {
 			const filter = audioContext!.createBiquadFilter();
-			filter.type = 'peaking';
+			if (bandIndex === 0) {
+				filter.type = 'lowshelf';
+			} else if (bandIndex === octaveBandCentersHz.length - 1) {
+				filter.type = 'highshelf';
+			} else {
+				filter.type = 'peaking';
+				filter.Q.value = q;
+			}
 			filter.frequency.value = frequencyHz;
-			filter.Q.value = q;
 			filter.gain.value = bandsDb[bandIndex] ?? 0;
 			return filter;
 		});
@@ -351,7 +415,7 @@ export function createNoiseEngine(): NoiseEngine {
 		},
 		setBandsDb(next) {
 			if (next.length !== octaveBandCentersHz.length) return;
-			bandsDb = next.map((v) => clamp(v, -24, 24));
+			bandsDb = next.map((v) => clamp(v, -40, 40));
 			if (!audioContext) return;
 			const now = audioContext.currentTime;
 			for (let i = 0; i < eqFilters.length; i += 1) {
@@ -387,7 +451,16 @@ export function createNoiseEngine(): NoiseEngine {
 				if (gainDb === 0) continue;
 
 				const frequencyHz = octaveBandCentersHz[bandIndex] ?? 1000;
-				const coefficients = createPeakingCoefficients({ sampleRate: sr, frequencyHz, q, gainDb });
+				let coefficients: BiquadCoefficients;
+
+				if (bandIndex === 0) {
+					coefficients = createLowshelfCoefficients({ sampleRate: sr, frequencyHz, gainDb });
+				} else if (bandIndex === octaveBandCentersHz.length - 1) {
+					coefficients = createHighshelfCoefficients({ sampleRate: sr, frequencyHz, gainDb });
+				} else {
+					coefficients = createPeakingCoefficients({ sampleRate: sr, frequencyHz, q, gainDb });
+				}
+
 				processBiquadInPlace(l, coefficients, { x1: 0, x2: 0, y1: 0, y2: 0 });
 				processBiquadInPlace(r, coefficients, { x1: 0, x2: 0, y1: 0, y2: 0 });
 			}

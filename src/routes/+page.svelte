@@ -81,31 +81,31 @@
 			id: 'infra',
 			label: 'Infra',
 			hint: 'Sub-bass rumble',
-			bandsDb: [12, 6, 0, -6, -12, -18, -24, -24, -24, -24]
+			bandsDb: [12, 6, 0, -6, -12, -18, -24, -30, -36, -40]
 		},
 		{
 			id: 'ultra',
 			label: 'Ultra',
 			hint: 'High frequency shimmer',
-			bandsDb: [-24, -24, -24, -18, -12, -6, 0, 6, 12, 12]
+			bandsDb: [-40, -36, -30, -24, -18, -12, -6, 0, 6, 12]
 		},
 		{
 			id: '60hz',
 			label: '60 Hz',
 			hint: 'Around 60 Hz focus',
-			bandsDb: [6, 12, 6, -6, -12, -18, -24, -24, -24, -24]
+			bandsDb: [6, 12, 6, -6, -12, -18, -24, -30, -36, -40]
 		},
 		{
 			id: '125hz',
 			label: '125 Hz',
 			hint: 'Low frequency focus',
-			bandsDb: [-6, 6, 12, 6, -6, -12, -18, -24, -24, -24]
+			bandsDb: [-6, 6, 12, 6, -6, -12, -18, -24, -30, -36]
 		},
 		{
 			id: '250hz',
 			label: '250 Hz',
 			hint: 'Low-mid focus',
-			bandsDb: [-12, -6, 6, 12, 6, -6, -12, -18, -24, -24]
+			bandsDb: [-12, -6, 6, 12, 6, -6, -12, -18, -24, -30]
 		},
 		{
 			id: '500hz',
@@ -117,25 +117,25 @@
 			id: '1khz',
 			label: '1 kHz',
 			hint: 'Mid frequency focus',
-			bandsDb: [-24, -18, -12, -6, 6, 12, 6, -6, -12, -18]
+			bandsDb: [-30, -24, -18, -12, -6, 6, 12, 6, -6, -12]
 		},
 		{
 			id: '2khz',
 			label: '2 kHz',
 			hint: 'Upper-mid focus',
-			bandsDb: [-24, -24, -18, -12, -6, 6, 12, 6, -6, -12]
+			bandsDb: [-36, -30, -24, -18, -12, -6, 6, 12, 6, -6]
 		},
 		{
 			id: '4khz',
 			label: '4 kHz',
 			hint: 'Presence frequency focus',
-			bandsDb: [-24, -24, -24, -18, -12, -6, 6, 12, 6, -6]
+			bandsDb: [-40, -36, -30, -24, -18, -12, -6, 6, 12, 6]
 		},
 		{
 			id: '8khz',
 			label: '8 kHz',
 			hint: 'High frequency focus',
-			bandsDb: [-24, -24, -24, -24, -18, -12, -6, 6, 12, 6]
+			bandsDb: [-40, -40, -36, -30, -24, -18, -12, -6, 6, 12]
 		},
 		{
 			id: 'speech-blocker',
@@ -153,7 +153,7 @@
 			id: 'random',
 			label: 'Random',
 			hint: 'Randomized EQ curve',
-			bandsDb: () => octaveBandCentersHz.map(() => Math.round(Math.random() * 48 - 24))
+			bandsDb: () => octaveBandCentersHz.map(() => Math.round(Math.random() * 72 - 36))
 		}
 	];
 
@@ -188,7 +188,7 @@
 	}
 
 	function clampDb(value: number) {
-		return Math.max(-24, Math.min(24, value));
+		return Math.max(-40, Math.min(40, value));
 	}
 
 	function clamp01(value: number) {
@@ -356,8 +356,8 @@
 								<div class="flex w-10 shrink-0 flex-col items-center gap-2">
 									<Slider
 										value={bandsDb[bandIndex] ?? 0}
-										min={-24}
-										max={24}
+										min={-40}
+										max={40}
 										step={1}
 										accentClass={sliderAccents[bandIndex] ?? 'bg-sky-300'}
 										ariaLabel={`${frequencyHz} Hz band`}
@@ -445,11 +445,7 @@
 							>
 								{getPresetLabel(preset)} preset
 							</div>
-							<div
-								class="rounded-full bg-white/5 px-3 py-1 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
-							>
-								Volume {(volume * 100).toFixed(0)}%
-							</div>
+
 							<div
 								class="rounded-full bg-white/5 px-3 py-1 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
 							>
@@ -457,10 +453,16 @@
 							</div>
 						</div>
 						<div class="rounded-2xl bg-white/5 p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
-							<span class="text-sm font-medium">Now playing</span>
-							<div class="mt-2 flex items-center justify-between">
-								<span class="text-sm text-slate-300">{isPlaying ? 'On' : 'Off'}</span>
-								<span class="text-sm text-slate-200">{getPresetLabel(preset)}</span>
+							<div class="flex items-center justify-between">
+								<span class="text-sm font-medium">Now playing</span>
+								<div class="flex items-center gap-2">
+									{#if isPlaying}
+										<span class="size-3 rounded-full bg-green-400"></span>
+									{:else}
+										<span class="size-3 rounded-full bg-slate-500"></span>
+									{/if}
+									<span class="text-sm text-slate-200">{getPresetLabel(preset)}</span>
+								</div>
 							</div>
 						</div>
 						<div class="rounded-2xl bg-white/5 p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
